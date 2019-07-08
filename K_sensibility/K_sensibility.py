@@ -1,3 +1,8 @@
+'''
+THIS CODE PROVIDES PARAMETER K SENSIBILITY ANALYSIS. TO DO THAT, N=3 WAS CHOSEN, AND BETA IS KEPT FIXED USING THE FOLLOWING ASSUMPTIONS
+B_i,j = B_j,i
+B = null for non neighbours
+'''
 # Importing important libraries
 from fenics import *
 import numpy as np
@@ -61,11 +66,9 @@ V = VectorFunctionSpace(mesh, 'P', 1)
 W = mixed_vector_function_space(mesh, N)
 
 #Define boundary conditions
-bc_epi = DirichletBC(P.sub(0), Constant(10500), boundary_markers, 40)
 bc_endo1 = DirichletBC(P.sub(0), Constant(0), boundary_markers, 30)
 bc_endo2 = DirichletBC(P.sub(1), Constant(0), boundary_markers, 30)
 bc_endo3 = DirichletBC(P.sub(2), Constant(0), boundary_markers, 30)
-#bc_endo4 = DirichletBC(P.sub(3), Constant(0), boundary_markers, 30)
 bcs = [bc_endo1,bc_endo2, bc_endo3]
 #bcs = [bc_epi,bc_endo3]
 
@@ -76,11 +79,11 @@ pD = Function(P.sub(0).collapse())
 q = TestFunction(P)
 
 # Define parameters for perfusion
-K = [Constant(1), Constant(10), Constant(20), Constant(20)]
-#beta = [[0., 0.02, 0., 0.], [0.02, 0., 0.05, 0.], [0., 0.05, 0., 0.1], [0., 0.0, 0.1, 0.]]
-beta = [[0., 0.02, 0., 0.], [0.02, 0., 0.06, 0.], [0., 0.06, 0., 0.1], [0., 0., 0.1, 0.]]
-#f = [Constant(1200), Constant(0.), -0.1*(p[1]-3)]
-f = [Constant(0.), Constant(0.), Constant(0.), Constant(0.)]
+j = 25
+K = [Constant(1), Constant(2*j), Constant(20)]
+print(K[0])
+beta = [[0., 0.02, 0.], [0.02, 0., 0.06], [0., 0.06, 0.], [0., 0., 0.1]]
+f = [Constant(0.), Constant(0.), Constant(0.)]
 
 
 # Define variational problem
@@ -104,36 +107,16 @@ psi = mat.strain_energy(F) #guccione hyperelastic material energy function
 v = Function(W)
 (v0, v1, v2) = ufl.split(v)
 
-# Reaction (not working yet)
-epsilon = 0.1
-c = Function(P.sub(1).collapse())
-c_n = Function(P.sub(1).collapse())
-s = TestFunction(P.sub(1).collapse())
-
-#BCs for reaction
-bc_react_epi = DirichletBC(P.sub(1), Constant(1), boundary_markers, 40)
-bc_react_endo = DirichletBC(P.sub(1), Constant(0), boundary_markers, 30)
-bcs_react = [bc_react_epi, bc_react_endo]
-'''
 #Define storage file
 u_file = XDMFFile("contraction/u.xdmf")
-p0_file = XDMFFile("results_"+str(N)+"/p0.xdmf")
-p1_file = XDMFFile("results_"+str(N)+"/p1.xdmf")
-p2_file = XDMFFile("results_"+str(N)+"/p2.xdmf")
-p3_file = XDMFFile("results_"+str(N)+"/p3.xdmf")
-v0_file = XDMFFile("results_"+str(N)+"/v0.xdmf")
-v1_file = XDMFFile("results_"+str(N)+"/v1.xdmf")
-v2_file = XDMFFile("results_"+str(N)+"/v2.xdmf")
-v3_file = XDMFFile("results_"+str(N)+"/v3.xdmf")
-c_file = XDMFFile("results_"+str(N)+"/reaction.xdmf") 
+p0_file = XDMFFile("results_for_K[2]/p0_K"+str(j)+".xdmf")
+p1_file = XDMFFile("results_for_K[2]/p1_K"+str(j)+".xdmf")
+p2_file = XDMFFile("results_for_K[2]/p2_K"+str(j)+".xdmf")
+v0_file = XDMFFile("results_for_K[2]/v0_K"+str(j)+".xdmf")
+v1_file = XDMFFile("results_for_K[2]/v1_K"+str(j)+".xdmf")
+v2_file = XDMFFile("results_for_K[2]/v2_K"+str(j)+".xdmf")
 append = False
-'''
 
-#Sensibility analisys
-u_file = XDMFFile("contraction/u.xdmf")
-p1_file = XDMFFile("sensibility/p1_"+str(N)+".xdmf")
-v1_file = XDMFFile("sensibility/v1_"+str(N)+".xdmf")
-append = False
 
 # Solve
 steps = 20
@@ -152,58 +135,18 @@ for i in range(steps):
 	(p0,p1,p2) = p.split(True)
 
 	# Postprocessning for find velocity in each compartment
-	#v0 = project(-K[0]*grad(pD),W.sub(0).collapse())
+	v0 = project(-K[0]*grad(pD),W.sub(0).collapse())
 	v1 = project(-K[1]*grad(p1),W.sub(1).collapse())
-	#v2 = project(-K[2]*grad(p2),W.sub(2).collapse())
-	#v3 = project(-K[3]*grad(p2),W.sub(3).collapse())
-
-	#Z = dot((c - c_n)/dt,s)*dx + dot(dot(v0,grad(c)),s)*dx + dot(epsilon*grad(c),grad(s))*dx - dot(f[0],s)*ds
-	#solve (Z==0, c, bcs_react)
+	v2 = project(-K[2]*grad(p2),W.sub(2).collapse())
 	
 	# saving solutions
-	#p0_file.write_checkpoint(pD, 'p0', t, append = append)
+	p0_file.write_checkpoint(pD, 'p0', t, append = append)
 	p1_file.write_checkpoint(p1, 'p1', t, append = append)
-	#p2_file.write_checkpoint(p2, 'p2', t, append = append)
-	#p3_file.write_checkpoint(p3, 'p3', t, append = append)
+	p2_file.write_checkpoint(p2, 'p2', t, append = append)
 
-	#v0_file.write_checkpoint(v0, 'v0', t, append = append)
+	v0_file.write_checkpoint(v0, 'v0', t, append = append)
 	v1_file.write_checkpoint(v1, 'v1', t, append = append)
-	#v2_file.write_checkpoint(v2, 'v2', t, append = append)
-	#v3_file.write_checkpoint(v3, 'v3', t, append = append)
-
-	#c_file.write_checkpoint(c, 'concentration', t, append = append)
+	v2_file.write_checkpoint(v2, 'v2', t, append = append)
 
 	append = True
 	t += dt
-
-'''
-# Plot solution p0
-plot(mesh, alpha=0.1, edgecolor='k', color='w')
-fig = plot(p0)
-plt.colorbar(fig)
-
-ax = plt.gca()
-ax.view_init(elev=-67, azim=-179)
-ax.set_axis_off()
-plt.savefig('teste_LV3/p0.png')
-
-# Plot solution p1
-plot(mesh, alpha=0.1, edgecolor='k', color='w')
-fig = plot(p1)
-plt.colorbar(fig)
-
-ax = plt.gca()
-ax.view_init(elev=-67, azim=-179)
-ax.set_axis_off()
-plt.savefig('teste_LV3/p1.png')
-
-# Plot solution p2
-plot(mesh, alpha=0.1, edgecolor='k', color='w')
-fig = plot(p2)
-plt.colorbar(fig)
-
-ax = plt.gca()
-ax.view_init(elev=-67, azim=-179)
-ax.set_axis_off()
-plt.savefig('teste_LV3/p2.png')
-'''
