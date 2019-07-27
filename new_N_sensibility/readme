@@ -1,0 +1,10 @@
+For this study, a relaxation phase was added (equal and opposite to the contraction) to perform a more realist beat. 
+It was evaluated til 10 compartments. For the velocity, the plots give us information that after N>6, the behavior of the next compartments is identical to the N=6.
+The assumptions for this study were:
+
+1- Beta = null for non-neighbors
+2- K and beta Constant and equal for each compartment (K = 2E-9 [m^2/(Pa.s)] and beta = 3E-5 [1/(Pa.s)]    (taken from chapelle2010)
+3- No Boundary Conditions
+4- Source term from displacement in compartment 1
+
+
