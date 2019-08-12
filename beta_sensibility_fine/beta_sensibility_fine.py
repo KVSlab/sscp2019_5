@@ -62,7 +62,7 @@ psi = [Constant(source)] # [m^3/s]
 K_artery = 1E-6                             # default: 1E-6 [m^2/kPa.s]
 K_capillary = 20E-6                         # default: 20E-6 [m^2/kPa.s]
 beta_artery = 2E-2                          # default: 2E-2 [1/kPa.s]
-beta_capillary = 5E-2                       # default: 5E-2 [1/kPa.s]
+beta_capillary = 0.5E-2                       # default: 5E-2 [1/kPa.s]
 f_source = Constant(.0)                     # default: 1.2E-6 [m^3/s]
 f_sink = Constant(0.1)*(p[-1]-Constant(3))  # default: Constant(0.1)*(p[-1]-Constant(3)) [1/s] (pressure in kPa)
 
